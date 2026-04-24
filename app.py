@@ -47,4 +47,4 @@ def ask2():
 
 if __name__ == '__main__':
     # Berjalan di port 5000
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5000)
