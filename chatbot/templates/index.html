@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot {{ mode }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4f46e5; /* Indigo Modern */
+            --bg-light: #f9fafb;
+            --chat-bg: #ffffff;
+        }
+        body { background-color: var(--bg-light); font-family: 'Inter', sans-serif; }
+        
+        .card { border: none; border-radius: 12px; }
+        .card-header { background-color: var(--primary-color) !important; border-radius: 12px 12px 0 0 !important; padding: 15px 20px; }
+        
+        #chat-box {
+            height: 450px;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--chat-bg);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Bubble Chat Style */
+        .msg { max-width: 80%; margin-bottom: 15px; padding: 10px 15px; border-radius: 15px; font-size: 0.95rem; line-height: 1.5; }
+        .bot-msg { background-color: #f3f4f6; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 2px; }
+        .user-msg { background-color: var(--primary-color); color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        /* List Menu Style */
+        .menu-container { width: 100%; max-width: 300px; margin-top: 5px; margin-bottom: 15px; }
+        .list-group-item-action { 
+            border: 1px solid #e5e7eb; 
+            margin-bottom: 5px; 
+            border-radius: 8px !important; 
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        .list-group-item-action:hover { background-color: #eef2ff; border-color: var(--primary-color); color: var(--primary-color); }
+
+        .input-group { background: white; padding: 10px; border-radius: 0 0 12px 12px; border-top: 1px solid #f3f4f6; }
+        .form-control { border: none; padding-left: 15px; }
+        .form-control:focus { box-shadow: none; }
+    </style>
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-7 col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header text-white d-flex align-items-center">
+                    <div class="rounded-circle bg-white me-3" style="width: 10px; height: 10px;"></div>
+                    <h6 class="mb-0">Asisten Angka Kredit ({{ mode }})</h6>
+                </div>
+                
+                <div id="chat-box">
+                    </div>
+
+                <div class="input-group">
+                    <input type="text" id="user-input" class="form-control" placeholder="Tulis pertanyaan Anda..." onkeypress="handleKeyPress(event)">
+                    <button class="btn btn-link text-primary fw-bold text-decoration-none" onclick="sendChat()">Kirim</button>
+                </div>
+            </div>
+            <p class="text-center text-muted mt-3" style="font-size: 0.8rem;">Ref: Peraturan BKN No. 3 Th 2023 & FAQ Jan 2026</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function handleKeyPress(e) {
+        if (e.key === "Enter") { e.preventDefault(); sendChat(); }
+    }
+
+    // Fungsi List Menu ke Bawah
+    function showOptions(options) {
+        const chatBox = document.getElementById('chat-box');
+        if (!options || options.length === 0) return;
+
+        let menuHtml = '<div class="menu-container"><div class="list-group shadow-sm">';
+        options.forEach(opt => {
+            menuHtml += `<button type="button" class="list-group-item list-group-item-action" onclick="sendChat('${opt}')">${opt}</button>`;
+        });
+        menuHtml += '</div></div>';
+        
+        chatBox.innerHTML += menuHtml;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendChat(message = null) {
+        const input = document.getElementById('user-input');
+        const text = message || input.value;
+        if (!text.trim()) return;
+
+        const chatBox = document.getElementById('chat-box');
+        chatBox.innerHTML += `<div class="msg user-msg">${text}</div>`;
+        if (!message) input.value = '';
+
+        const response = await fetch('/get_response', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text })
+        });
+        
+        const data = await response.json();
+        
+        chatBox.innerHTML += `<div class="msg bot-msg"><b>Bot:</b><br>${data.reply}</div>`;
+        
+        if (data.options) {
+            showOptions(data.options);
+        }
+
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    window.onload = () => sendChat('start');
+</script>
+
+</body>
+</html>
