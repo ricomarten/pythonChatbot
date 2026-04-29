@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Bot Rule AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5" style="max-width: 500px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+            <strong>Bot Rule AI</strong>
+            <small class="badge bg-success">Ollama Active</small>
+        </div>
+        
+        <div id="box" class="card-body overflow-auto" style="height: 400px; background-color: #ffffff;">
+            <p class="text-secondary small"><i>Bot: Halo! Saya bertenaga AI. Silakan tanya apa saja.</i></p>
+        </div>
+
+        <div class="card-footer bg-white border-top-0">
+            <div class="input-group">
+                <input type="text" id="in" class="form-control" placeholder="Tanyakan sesuatu..." onkeypress="if(event.key=='Enter')send()">
+                <button id="btn-send" class="btn btn-dark" onclick="send()">Kirim</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function send() {
+        const input = document.getElementById('in');
+        const box = document.getElementById('box');
+        const btn = document.getElementById('btn-send');
+        const text = input.value.trim();
+
+        if(!text) return;
+
+        // 1. Tampilkan Chat User
+        box.innerHTML += `<div class="mb-3 text-end text-dark"><strong>Anda:</strong><br>${text}</div>`;
+        input.value = '';
+        
+        // 2. Tampilkan Indikator Loading & Disable Tombol
+        btn.disabled = true;
+        const loadingId = "loading-" + Date.now();
+        box.innerHTML += `<p id="${loadingId}" class="text-muted small"><i>Bot sedang berpikir...</i></p>`;
+        box.scrollTop = box.scrollHeight;
+
+        try {
+            // 3. Panggil API Flask
+            let res = await fetch('/get_response', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: text})
+            });
+            let data = await res.json();
+
+            // 4. Hapus Loading dan Tampilkan Balasan Bot
+            document.getElementById(loadingId).remove();
+            box.innerHTML += `<div class="mb-3 text-success"><strong>Bot:</strong><br>${data.reply}</div>`;
+        } catch (err) {
+            document.getElementById(loadingId).innerText = "Bot: Maaf, server bermasalah.";
+        }
+
+        // 5. Reset State
+        btn.disabled = false;
+        box.scrollTop = box.scrollHeight;
+    }
+</script>
+
+</body>
+</html>
